@@ -2,7 +2,9 @@ package com.hejian.maphejian;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
@@ -10,12 +12,19 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolygonOptions;
 import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.model.LatLng;
-import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
+import com.baidu.mapapi.search.core.PoiInfo;
+import com.baidu.mapapi.search.core.SearchResult;
+import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
+import com.baidu.mapapi.search.poi.PoiCitySearchOption;
+import com.baidu.mapapi.search.poi.PoiDetailResult;
+import com.baidu.mapapi.search.poi.PoiIndoorResult;
+import com.baidu.mapapi.search.poi.PoiResult;
 import com.baidu.mapapi.search.poi.PoiSearch;
 
 import java.util.ArrayList;
@@ -44,6 +53,105 @@ public class MainActivity extends AppCompatActivity {
     private void initListener() {
         //添加地图的事件
         initMapListener();
+        //添加marker(覆盖物)点击事件
+        initMarkerListener();
+        //检索监听
+        initPoiListener();
+    }
+
+    private void initPoiListener() {
+        poiSearch.setOnGetPoiSearchResultListener(new OnGetPoiSearchResultListener() {
+            //获取POI检索结果
+            @Override
+            public void onGetPoiResult(PoiResult poiResult) {
+                //判断是否有结果
+                if (poiResult == null
+                        || poiResult.error != SearchResult.ERRORNO.NO_ERROR) {
+                    Log.v("TAG", "没有找到相关搜索");
+                    return;
+                }
+                //获取检索结果集
+                List<PoiInfo> list = poiResult.getAllPoi();
+
+                for (PoiInfo info : list) {
+
+                    Log.i("TAG", "onGetPoiResult: " + info.name);
+
+                    //添加标注物
+                    BitmapDescriptor bitmapDescriptor
+                            = BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher);
+
+                    OverlayOptions options = new MarkerOptions().position(info.location)
+                            .icon(bitmapDescriptor);
+
+                    mapView.addOverlay(options);
+
+                    //添加系统提供的标注物
+//                    mapView.clear();
+//                    MyOverly myOverly = new MyOverly(mapView);
+//                    myOverly.setData(poiResult);
+//                    myOverly.addToMap();
+//                    myOverly.zoomToSpan(); //自动放大
+//                    mapView.setOnMarkerClickListener(myOverly);
+
+                }
+            }
+
+
+            //poi搜索的回调详情  点击的时候调用此方法
+            @Override
+            public void onGetPoiDetailResult(PoiDetailResult poiDetailResult) {
+
+//                shareUrlSearch.requestPoiDetailShareUrl(
+//                        new PoiDetailShareURLOption()
+//                                .poiUid(poiDetailResult.getUid()));
+
+                /*shareUrlSearch.requestLocationShareUrl(
+                        new LocationShareURLOption()
+                                .location(poiDetailResult.getLocation())
+                                .name("aaa").snippet("bbb"));*/
+            }
+
+            @Override
+            public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
+
+            }
+        });
+    }
+
+//    class MyOverly extends PoiOverlay {
+//        /**
+//         * 构造函数
+//         *
+//         * @param baiduMap 该 PoiOverlay 引用的 BaiduMap 对象
+//         */
+//        public MyOverly(BaiduMap baiduMap) {
+//            super(baiduMap);
+//        }
+//
+//        @Override
+//        public boolean onPoiClick(int i) {
+//
+//            List<PoiInfo> allPoi = getPoiResult().getAllPoi();
+//            Toast.makeText(MainActivity.this,
+//                    "" + allPoi.get(i).name, Toast.LENGTH_SHORT).show();
+//
+//            //
+//            poiSearch.searchPoiDetail(
+//                    new PoiDetailSearchOption().poiUid(allPoi.get(i).uid));
+//            return super.onPoiClick(i);
+//        }
+//    }
+
+
+    private void initMarkerListener() {
+        mapView.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Toast.makeText(MainActivity.this, "别点我讨厌！！", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
     }
 
     private void initMapListener() {
@@ -52,6 +160,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onMapClick(LatLng latLng) {
                 mapView.clear();//清除地图上的所有的覆盖物
+
+                Toast.makeText(MainActivity.this, ""+latLng, Toast.LENGTH_SHORT).show();
 
                 //创建一个覆盖物的图标
                 BitmapDescriptor icon = BitmapDescriptorFactory
@@ -78,6 +188,8 @@ public class MainActivity extends AppCompatActivity {
         map = (MapView) findViewById(R.id.mapview);
         //获取当前的地图
         mapView = map.getMap();
+        //初始化POI检索
+        poiSearch = PoiSearch.newInstance();
     }
 
     /**
@@ -146,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /*
-   * POI检索
+   * POI（周边）检索
    *
    * */
     public void btn3(View view) {
@@ -166,15 +278,15 @@ public class MainActivity extends AppCompatActivity {
             分页编号
          */
 
-        /*poiSearch.searchInCity(
+        poiSearch.searchInCity(
                 new PoiCitySearchOption().city("北京")
-                        .keyword("ATM").pageNum(1).pageCapacity(10));*/
+                        .keyword("ATM").pageNum(1).pageCapacity(10));
 
         /**
 
          keyword(java.lang.String key)
          检索关键字
-         PoiNearbySearchOption	location(LatLng location)
+         PoiNearbySearchOption location(LatLng location)
          检索位置
          PoiNearbySearchOption	pageCapacity(int pageCapacity)
          设置每页容量，默认为每页10条
@@ -186,9 +298,9 @@ public class MainActivity extends AppCompatActivity {
          搜索结果排序规则，可选，默认
          */
 
-        LatLng l1 = new LatLng(39.93925, 116.357428);
-        poiSearch.searchNearby(new PoiNearbySearchOption()
-                .radius(10000).pageCapacity(10).pageNum(1).location(l1).keyword("美食"));
+//        LatLng l1 = new LatLng(39.93925, 116.357428);
+//        poiSearch.searchNearby(new PoiNearbySearchOption()
+//                .radius(10000).pageCapacity(10).pageNum(1).location(l1).keyword("美食"));
     }
 
     public void btn4(View view){}

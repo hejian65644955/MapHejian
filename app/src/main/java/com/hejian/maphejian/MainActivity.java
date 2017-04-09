@@ -21,11 +21,13 @@ import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.core.SearchResult;
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
-import com.baidu.mapapi.search.poi.PoiCitySearchOption;
 import com.baidu.mapapi.search.poi.PoiDetailResult;
+import com.baidu.mapapi.search.poi.PoiDetailSearchOption;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
+import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
 import com.baidu.mapapi.search.poi.PoiResult;
 import com.baidu.mapapi.search.poi.PoiSearch;
+import com.hejian.maphejian.overlayutil.PoiOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void initListener() {
         //添加地图的事件
-        initMapListener();
+        //initMapListener();
         //添加marker(覆盖物)点击事件
-        initMarkerListener();
+        //initMarkerListener();
         //检索监听
         initPoiListener();
     }
@@ -78,21 +80,21 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("TAG", "onGetPoiResult: " + info.name);
 
                     //添加标注物
-                    BitmapDescriptor bitmapDescriptor
-                            = BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher);
-
-                    OverlayOptions options = new MarkerOptions().position(info.location)
-                            .icon(bitmapDescriptor);
-
-                    mapView.addOverlay(options);
+//                    BitmapDescriptor bitmapDescriptor
+//                            = BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher);
+//
+//                    OverlayOptions options = new MarkerOptions().position(info.location)
+//                            .icon(bitmapDescriptor);
+//
+//                    mapView.addOverlay(options);
 
                     //添加系统提供的标注物
-//                    mapView.clear();
-//                    MyOverly myOverly = new MyOverly(mapView);
-//                    myOverly.setData(poiResult);
-//                    myOverly.addToMap();
-//                    myOverly.zoomToSpan(); //自动放大
-//                    mapView.setOnMarkerClickListener(myOverly);
+                    mapView.clear();
+                    MyOverly myOverly = new MyOverly(mapView);
+                    myOverly.setData(poiResult);
+                    myOverly.addToMap();
+                    myOverly.zoomToSpan(); //自动放大
+                    mapView.setOnMarkerClickListener(myOverly);
 
                 }
             }
@@ -119,29 +121,29 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    class MyOverly extends PoiOverlay {
-//        /**
-//         * 构造函数
-//         *
-//         * @param baiduMap 该 PoiOverlay 引用的 BaiduMap 对象
-//         */
-//        public MyOverly(BaiduMap baiduMap) {
-//            super(baiduMap);
-//        }
-//
-//        @Override
-//        public boolean onPoiClick(int i) {
-//
-//            List<PoiInfo> allPoi = getPoiResult().getAllPoi();
-//            Toast.makeText(MainActivity.this,
-//                    "" + allPoi.get(i).name, Toast.LENGTH_SHORT).show();
-//
-//            //
-//            poiSearch.searchPoiDetail(
-//                    new PoiDetailSearchOption().poiUid(allPoi.get(i).uid));
-//            return super.onPoiClick(i);
-//        }
-//    }
+    class MyOverly extends PoiOverlay {
+        /**
+         * 构造函数
+         *
+         * @param baiduMap 该 PoiOverlay 引用的 BaiduMap 对象
+         */
+        public MyOverly(BaiduMap baiduMap) {
+            super(baiduMap);
+        }
+
+        @Override
+        public boolean onPoiClick(int i) {
+
+            List<PoiInfo> allPoi = getPoiResult().getAllPoi();
+            Toast.makeText(MainActivity.this,
+                    "" + allPoi.get(i).name, Toast.LENGTH_SHORT).show();
+
+            //
+            poiSearch.searchPoiDetail(
+                    new PoiDetailSearchOption().poiUid(allPoi.get(i).uid));
+            return super.onPoiClick(i);
+        }
+    }
 
 
     private void initMarkerListener() {
@@ -278,9 +280,9 @@ public class MainActivity extends AppCompatActivity {
             分页编号
          */
 
-        poiSearch.searchInCity(
+      /*  poiSearch.searchInCity(
                 new PoiCitySearchOption().city("北京")
-                        .keyword("ATM").pageNum(1).pageCapacity(10));
+                        .keyword("ATM").pageNum(1).pageCapacity(10));*/
 
         /**
 
@@ -298,9 +300,10 @@ public class MainActivity extends AppCompatActivity {
          搜索结果排序规则，可选，默认
          */
 
-//        LatLng l1 = new LatLng(39.93925, 116.357428);
-//        poiSearch.searchNearby(new PoiNearbySearchOption()
-//                .radius(10000).pageCapacity(10).pageNum(1).location(l1).keyword("美食"));
+        //周边检索
+        LatLng l1 = new LatLng(39.93925, 116.357428);
+        poiSearch.searchNearby(new PoiNearbySearchOption()
+                .radius(10000).pageCapacity(10).pageNum(1).location(l1).keyword("美食"));
     }
 
     public void btn4(View view){}
